@@ -41,12 +41,12 @@
 
   const ORDER = ['thuong', 'chay'];
   const FEATURED = [
-    { name: 'Lẩu Thái Chua Cay', en: 'Spicy and Sour Thai Hot Pot', price: '169k', img: 'images/lau2.jpg' },
-    { name: 'Pad Thái', en: 'Pad Thai', price: '55k', img: 'images/padthai.jpg' },
-    { name: 'Đậu Hũ Nấm Kho Tiêu', en: 'Braised Tofu with Mushrooms and Pepper', price: '55k', img: 'images/kho.jpg' },
-    { name: 'Cải Thìa Đông Cô', en: 'Bok Choy with Shiitake Mushrooms', price: '60k', img: 'images/caithia.jpg' },
-    { name: 'Nui Đút Lò', en: 'Baked Pasta', price: '80k', img: 'images/pasta.jpg' },
-    { name: 'Cơm Chiên Thơm Thái', en: 'Thai Pineapple Fried Rice', price: '50k', img: 'images/comthom.jpg' }
+    { name: 'Lẩu Thái Chua Cay', en: 'Spicy and Sour Thai Hot Pot', price: '169k', img: 'lau2.jpg' },
+    { name: 'Pad Thái', en: 'Pad Thai', price: '55k', img: 'padthai.jpg' },
+    { name: 'Đậu Hũ Nấm Kho Tiêu', en: 'Braised Tofu with Mushrooms and Pepper', price: '55k', img: 'kho.jpg' },
+    { name: 'Cải Thìa Đông Cô', en: 'Bok Choy with Shiitake Mushrooms', price: '60k', img: 'caithia.jpg' },
+    { name: 'Nui Đút Lò', en: 'Baked Pasta', price: '80k', img: 'pasta.jpg' },
+    { name: 'Cơm Chiên Thơm Thái', en: 'Thai Pineapple Fried Rice', price: '50k', img: 'comthom.jpg' }
   ];
 
   const $ = (id) => document.getElementById(id);
