@@ -67,3 +67,29 @@ export const DSTATUS = {
   dang_giao: 'Đang giao', xong: 'Đã giao xong', huy: 'Đã hủy'
 };
 export const shortCode = () => Math.random().toString(36).slice(2, 6).toUpperCase().replace(/[O0I1]/g, 'X');
+
+// Nén ảnh món trước khi lưu (miễn phí, lưu thẳng trong Firestore): tối đa ~480px, JPEG
+export function compressImage(file, maxSide = 480) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      let q = 0.75, out = cv.toDataURL('image/jpeg', q);
+      while (out.length > 140000 && q > 0.35) { q -= 0.1; out = cv.toDataURL('image/jpeg', q); }
+      URL.revokeObjectURL(img.src);
+      resolve(out);
+    };
+    img.onerror = () => reject(new Error('Không đọc được ảnh'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+// Gắn ảnh vào các thẻ <img data-img="id"> sau khi render
+export function hydrateImages(root, store) {
+  root.querySelectorAll('img[data-img]:not([src])').forEach(async (el) => {
+    const src = await store.getImage(el.dataset.img);
+    if (src) el.src = src; else el.remove();
+  });
+}

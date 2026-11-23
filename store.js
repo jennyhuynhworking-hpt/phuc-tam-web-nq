@@ -23,6 +23,7 @@ function withConfig(c) {
   return { ...d, ...(c || {}), catStation: { ...d.catStation, ...((c && c.catStation) || {}) }, bank: { ...((c && c.bank) || {}) }, delivery: { ...d.delivery, ...((c && c.delivery) || {}) } };
 }
 const withMenu = (m) => (m && m.thuong && m.chay ? m : defaultMenu());
+const imgCache = new Map();
 
 let api = null;
 export async function initStore() {
@@ -33,7 +34,7 @@ export async function initStore() {
 /* ================= DEMO: localStorage ================= */
 function localStore() {
   const KEY = 'phuctam_qr_v2';
-  const blank = () => ({ config: clone(DEFAULT_CONFIG), menu: null, tickets: [], calls: [], bookings: [], bills: [], expenses: [], deliveries: [] });
+  const blank = () => ({ config: clone(DEFAULT_CONFIG), menu: null, tickets: [], calls: [], bookings: [], bills: [], expenses: [], deliveries: [], images: {} });
   const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
   const fix = (s) => ({ ...blank(), ...(s || {}) });
   let st = fix(read());
@@ -90,7 +91,9 @@ function localStore() {
     async listExpenses(a, b) { return st.expenses.filter((x) => inRange(x.at, a, b)); },
     async addExpense(e) { st.expenses.push({ ...e, id: uid() }); commit(); },
     async deleteExpense(id) { st.expenses = st.expenses.filter((x) => x.id !== id); commit(); },
-    async resetAll() { const keepMenu = st.menu; st = blank(); st.menu = keepMenu; commit(); }
+    async saveImage(data) { const id = uid(); st.images[id] = data; commit(); return id; },
+    async getImage(id) { return st.images[id] || ''; },
+    async resetAll() { const keepMenu = st.menu, keepImg = st.images; st = blank(); st.menu = keepMenu; st.images = keepImg; commit(); }
   };
 }
 
@@ -147,6 +150,12 @@ async function firebaseStore() {
       tCache.filter((t) => t.table === tid).forEach((t) => b.update(F.doc(db, 'tickets', t.id), { paid: true, paidAt: bill.paidAt }));
       cCache.filter((c) => c.table === tid).forEach((c) => b.update(F.doc(db, 'calls', c.id), { done: true }));
       await b.commit();
+    },
+    async saveImage(data) { const r = await F.addDoc(C('images'), { data, createdAt: Date.now() }); imgCache.set(r.id, data); return r.id; },
+    async getImage(id) {
+      if (imgCache.has(id)) return imgCache.get(id);
+      const p = F.getDoc(F.doc(db, 'images', id)).then((s) => (s.exists() ? s.data().data : '')).catch(() => '');
+      imgCache.set(id, p); const v = await p; imgCache.set(id, v); return v;
     },
     async addBooking(x) { await F.addDoc(C('bookings'), x); },
     updateBooking(id, p) { return F.updateDoc(F.doc(db, 'bookings', id), p); },

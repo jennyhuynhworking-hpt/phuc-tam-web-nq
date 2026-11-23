@@ -1,6 +1,6 @@
 // Website giới thiệu: món nổi bật, thực đơn (lấy từ dữ liệu quản lý), form đặt bàn gửi về trang quản lý.
 import { initStore, defaultMenu } from './store.js';
-import { $, esc, toast } from './common.js';
+import { $, esc, toast, hydrateImages } from './common.js';
 
 const FEATURED = [
   { name: 'Lẩu Thái Chua Cay', en: 'Spicy and Sour Thai Hot Pot', price: '169k', img: 'lau2.jpg' },
@@ -16,6 +16,7 @@ $('featured').innerHTML = FEATURED.map((f) => `
   </article>`).join('');
 
 let MENU = defaultMenu();
+let store = null;
 const state = { menu: 'thuong', cat: 0, guests: 2 };
 function render() {
   const cur = MENU[state.menu];
@@ -26,9 +27,10 @@ function render() {
   const cat = cur.cats[state.cat];
   $('catTitle').textContent = cat ? cat.label : '';
   $('items').innerHTML = (cat ? cat.items : []).map((it) => `
-    <div class="item ${it.out ? 'out' : ''}"><div class="item-main">
+    <div class="item ${it.out ? 'out' : ''}"><div class="item-left">${it.img ? `<img class="item-thumb" data-img="${esc(it.img)}" alt="">` : ''}<div class="item-main">
       <span class="item-name">${esc(it.name)}${it.must ? '<span class="badge">Must try</span>' : ''}${it.out ? '<span class="out-tag">Tạm hết</span>' : ''}</span>
-      <span class="item-en">${esc(it.en)}</span></div><span class="item-price">${esc(it.price)}</span></div>`).join('');
+      <span class="item-en">${esc(it.en)}</span></div></div><span class="item-price">${esc(it.price)}</span></div>`).join('');
+  if (store) hydrateImages($('items'), store);
 }
 $('menuSwitch').addEventListener('click', (e) => { const b = e.target.closest('[data-menu]'); if (!b) return; state.menu = b.dataset.menu; state.cat = 0; render(); });
 $('cats').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; state.cat = Number(b.dataset.cat); render(); });
@@ -44,7 +46,6 @@ f.date.min = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(t
 f.date.value = f.date.min;
 const inHours = (t) => (t >= '09:00' && t <= '13:30') || (t >= '16:30' && t <= '20:30');
 
-let store = null;
 initStore().then((s) => { store = s; s.onMenu((m) => { MENU = m; render(); }); }).catch((e) => console.error(e));
 
 f.addEventListener('submit', async (e) => {

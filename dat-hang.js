@@ -1,6 +1,6 @@
 // Đặt món giao hàng trên web – bắt buộc chuyển khoản trước.
 import { initStore, defaultMenu } from './store.js';
-import { $, esc, money, parsePrice, toast, showFatal, vietQR, clock, nowHM, inShift, DSTATUS, shortCode, beep } from './common.js';
+import { $, esc, money, parsePrice, toast, showFatal, vietQR, clock, nowHM, inShift, DSTATUS, shortCode, beep, hydrateImages } from './common.js';
 
 let store;
 try { store = await initStore(); } catch (e) { showFatal(e); throw e; }
@@ -43,8 +43,9 @@ function renderMenu() {
   const ci = Number(tab), c = cats[ci];
   $('menuContent').innerHTML = `<h2 class="sec-title">${esc(c.label)}</h2>${c.items.map((it, ii) => {
     const key = ci + '-' + ii;
-    return `<div class="m-item ${it.out ? 'is-out' : ''}"><div class="m-info"><span class="m-name">${esc(it.name)}${it.must ? '<span class="badge">Must try</span>' : ''}</span><span class="m-en">${esc(it.en)}</span><span class="m-price">${esc(it.price)}</span></div><span data-ctl="${key}">${ctl(key)}</span></div>`;
+    return `<div class="m-item ${it.out ? 'is-out' : ''}"><div class="m-left">${it.img ? `<img class="m-thumb" data-img="${esc(it.img)}" alt="">` : ''}<div class="m-info"><span class="m-name">${esc(it.name)}${it.must ? '<span class="badge">Must try</span>' : ''}</span><span class="m-en">${esc(it.en)}</span><span class="m-price">${esc(it.price)}</span></div></div><span data-ctl="${key}">${ctl(key)}</span></div>`;
   }).join('')}`;
+  hydrateImages($('menuContent'), store);
 }
 function ctl(key) {
   const it = itemOf(key);

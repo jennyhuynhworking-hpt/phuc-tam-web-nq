@@ -1,6 +1,6 @@
 // Sửa thực đơn trực tiếp trên web + nhập/xuất Excel.
 import { defaultMenu } from './store.js';
-import { $, esc, toast } from './common.js';
+import { $, esc, toast, compressImage, hydrateImages } from './common.js';
 
 export function initMenuEditor({ store, getMenu }) {
   let draft = null, key = 'thuong', dirty = false, saving = false;
@@ -23,8 +23,11 @@ export function initMenuEditor({ store, getMenu }) {
             <button type="button" class="btn btn-danger btn-sm" data-cdel="${ci}">Xóa nhóm</button>
           </div>
         </div>
-        <div class="mi-head"><span>Tên món</span><span>Tên tiếng Anh</span><span>Giá</span><span>Must try</span><span>Còn món</span><span></span></div>
+        <div class="mi-head"><span>Ảnh</span><span>Tên món</span><span>Tên tiếng Anh</span><span>Giá</span><span>Must try</span><span>Còn món</span><span></span></div>
         ${c.items.map((it, ii) => `<div class="mi-row ${it.out ? 'is-out' : ''}">
+          <div class="mi-img">${it.img ? `<img data-img="${esc(it.img)}" alt="Ảnh ${esc(it.name)}">` : '<span class="mi-noimg" aria-hidden="true">Chưa có ảnh</span>'}
+            <label class="mi-imgbtn">${it.img ? 'Đổi ảnh' : '+ Thêm ảnh'}<input type="file" accept="image/*" data-up="${ci}-${ii}" hidden></label>
+            ${it.img ? `<button type="button" class="mi-imgbtn del" data-imgdel="${ci}-${ii}">Gỡ ảnh</button>` : ''}</div>
           <input value="${esc(it.name)}" data-f="name" data-ci="${ci}" data-ii="${ii}" aria-label="Tên món">
           <input value="${esc(it.en || '')}" data-f="en" data-ci="${ci}" data-ii="${ii}" aria-label="Tên tiếng Anh">
           <input value="${esc(it.price)}" data-f="price" data-ci="${ci}" data-ii="${ii}" aria-label="Giá" placeholder="55k">
@@ -34,6 +37,7 @@ export function initMenuEditor({ store, getMenu }) {
         </div>`).join('')}
         <button type="button" class="btn btn-outline btn-sm" data-iadd="${ci}" style="margin-top:10px">+ Thêm món vào ${esc(c.label)}</button>
       </div>`).join('') || '<div class="panel"><p class="empty">Thực đơn trống. Bấm "+ Thêm nhóm".</p></div>';
+    hydrateImages($('menuEditor'), store);
   }
 
   $('menuSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-mk]'); if (!b) return; key = b.dataset.mk; render(); });
@@ -47,8 +51,22 @@ export function initMenuEditor({ store, getMenu }) {
     else it[f] = t.value;
     setDirty(true);
   });
+  $('menuEditor').addEventListener('change', async (e) => {
+    const inp = e.target.closest('[data-up]'); if (!inp || !inp.files[0]) return;
+    const [ci, ii] = inp.dataset.up.split('-').map(Number);
+    const lab = inp.closest('label'); lab.firstChild.textContent = 'Đang tải…';
+    setDirty(true);
+    try {
+      const data = await compressImage(inp.files[0]);
+      const id = await store.saveImage(data);
+      const it = draft[key].cats[ci].items[ii];
+      it.img = id; render();
+      toast('Đã gắn ảnh cho "' + it.name + '". Bấm "Lưu thực đơn" để áp dụng.');
+    } catch (err) { console.error(err); toast('Không tải được ảnh, thử ảnh khác (JPG/PNG).', true); render(); }
+  });
   $('menuEditor').addEventListener('click', (e) => {
     const cats = draft[key].cats; const d = e.target.closest('button'); if (!d) return;
+    if (d.dataset.imgdel) { const [ci, ii] = d.dataset.imgdel.split('-').map(Number); delete cats[ci].items[ii].img; setDirty(true); render(); return; }
     if (d.dataset.iadd !== undefined) { cats[+d.dataset.iadd].items.push({ name: 'Món mới', en: '', price: '50k', must: false, out: false }); setDirty(true); render(); const rows = $('menuEditor').querySelectorAll(`[data-ci="${d.dataset.iadd}"][data-f="name"]`); const last = rows[rows.length - 1]; if (last) { last.focus(); last.select(); } return; }
     if (d.dataset.idel) { const [ci, ii] = d.dataset.idel.split('-').map(Number); if (!confirm('Xóa món "' + cats[ci].items[ii].name + '"?')) return; cats[ci].items.splice(ii, 1); setDirty(true); render(); return; }
     if (d.dataset.cdel !== undefined) { const ci = +d.dataset.cdel; if (!confirm('Xóa cả nhóm "' + cats[ci].label + '" (' + cats[ci].items.length + ' món)?')) return; cats.splice(ci, 1); setDirty(true); render(); return; }
@@ -91,7 +109,10 @@ export function initMenuEditor({ store, getMenu }) {
         let cat = next[k].cats.find((c) => c.label === catName);
         if (!cat) { cat = { label: catName, items: [] }; next[k].cats.push(cat); }
         let price = String(r['Giá']).trim(); if (/^\d+$/.test(price)) price = Number(price) >= 1000 ? Math.round(Number(price) / 1000) + 'k' : price + 'k';
-        cat.items.push({ name, en: String(r['Tên tiếng Anh']).trim(), price, must: !!String(r['Must try']).trim(), out: !!String(r['Hết món']).trim() });
+        const old = Object.values(draft).flatMap((mm) => mm.cats.flatMap((cc) => cc.items)).find((x) => x.name === name && x.img);
+        const item = { name, en: String(r['Tên tiếng Anh']).trim(), price, must: !!String(r['Must try']).trim(), out: !!String(r['Hết món']).trim() };
+        if (old) item.img = old.img;
+        cat.items.push(item);
         n++;
       });
       if (!n) { toast('File không có dòng món nào. Dùng đúng mẫu từ nút "Tải file Excel".', true); return; }

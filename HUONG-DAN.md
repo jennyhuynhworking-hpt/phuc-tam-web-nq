@@ -30,6 +30,7 @@ service cloud.firestore {
     match /bills/{doc}    { allow read, write: if true; }
     match /expenses/{doc} { allow read, write: if true; }
     match /deliveries/{doc} { allow read, write: if true; }
+    match /images/{doc}   { allow read, write: if true; }
   }
 }
 ```
@@ -50,6 +51,9 @@ service cloud.firestore {
 - **Cách nhanh bằng Excel**: "Tải file Excel" → sửa trong Excel (giữ nguyên tên cột) → "Nhập từ Excel" → kiểm tra → Lưu.
   Cột: Thực đơn | Nhóm | Tên món | Tên tiếng Anh | Giá | Must try (x) | Hết món (x).
 - Nhóm món mới: vào tab **Phân công bếp** chọn trạm cho nhóm đó.
+- **Ảnh món**: bấm "+ Thêm ảnh" ở cột Ảnh → chọn ảnh từ máy/điện thoại → ảnh tự nén nhỏ (~50–100KB) → bấm **Lưu thực đơn**.
+  Ảnh hiện trên app gọi món, trang đặt giao hàng và website. Món Must try có ảnh tự vào mục "Món nên thử".
+  Ảnh lưu miễn phí trong Firestore (không cần gói trả phí). Nên chụp ngang, món ở giữa, đủ sáng.
 
 ## 5. Đặt bàn
 - Khách đặt trên website → trang Quản lý **hiện popup** (bấm "Bật âm báo" để có chuông), tab Đặt bàn có số đỏ.

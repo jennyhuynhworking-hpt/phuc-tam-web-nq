@@ -1,5 +1,5 @@
 import { initStore, defaultMenu } from './store.js';
-import { $, esc, money, parsePrice, uid, STATUS, toast, showFatal } from './common.js';
+import { $, esc, money, parsePrice, uid, STATUS, toast, showFatal, hydrateImages } from './common.js';
 
 const tableId = new URLSearchParams(location.search).get('ban');
 let store;
@@ -78,14 +78,17 @@ function qtyCtl(key, small) {
 function renderContent() {
   const box = $('content');
   if (tab === 'noibat') {
-    const feats = FEATURED.map((f) => ({ ...f, key: findKey(f.names) })).filter((f) => f.key && !itemOf(f.key).out).slice(0, 6);
+    let feats = FEATURED.map((f) => ({ ...f, key: findKey(f.names) })).filter((f) => f.key && !itemOf(f.key).out);
+    // Món Must try có ảnh tải lên cũng được đưa vào "Món nên thử"
+    menu().cats.forEach((c, ci) => c.items.forEach((it, ii) => { const k = ci + '-' + ii; if (it.must && it.img && !it.out && !feats.some((f) => f.key === k)) feats.push({ key: k }); }));
+    feats = feats.map((f) => { const it = itemOf(f.key); return { ...f, src: it.img ? '' : f.img, imgId: it.img || '' }; }).slice(0, 8);
     const musts = [];
     menu().cats.forEach((c, ci) => c.items.forEach((it, ii) => { if (it.must && !feats.some((f) => f.key === ci + '-' + ii)) musts.push(ci + '-' + ii); }));
     box.innerHTML = `
       <div class="welcome"><h1>Chào mừng quý khách!</h1><p>Chọn món rồi gửi order, bếp nhận ngay – không cần chờ nhân viên.</p></div>
       ${feats.length ? `<h2 class="sec-title">Món nên thử</h2>
       <div class="feat-grid">${feats.map((f) => { const it = itemOf(f.key); return `
-        <article class="feat-card"><img src="${f.img}" alt="${esc(it.name)}" loading="lazy">
+        <article class="feat-card">${f.imgId ? `<img data-img="${esc(f.imgId)}" alt="${esc(it.name)}">` : `<img src="${f.src}" alt="${esc(it.name)}" loading="lazy">`}
           <div class="feat-body"><span class="feat-name">${esc(it.name)}</span>
             <div class="feat-foot"><span class="m-price">${esc(it.price)}</span><span data-ctl="${f.key}" data-small="1">${qtyCtl(f.key, true)}</span></div></div></article>`; }).join('')}</div>` : ''}
       ${musts.length ? `<h2 class="sec-title">Must try khác</h2>${musts.map(rowHtml).join('')}` : ''}`;
@@ -94,12 +97,13 @@ function renderContent() {
     const c = menu().cats[ci];
     box.innerHTML = `<h2 class="sec-title">${esc(c.label)}</h2>${c.items.map((_, ii) => rowHtml(ci + '-' + ii)).join('')}`;
   }
+  hydrateImages(box, store);
 }
 function rowHtml(key) {
   const it = itemOf(key);
-  return `<div class="m-item ${it.out ? 'is-out' : ''}"><div class="m-info">
+  return `<div class="m-item ${it.out ? 'is-out' : ''}"><div class="m-left">${it.img ? `<img class="m-thumb" data-img="${esc(it.img)}" alt="">` : ''}<div class="m-info">
       <span class="m-name">${esc(it.name)}${it.must ? '<span class="badge">Must try</span>' : ''}</span>
-      <span class="m-en">${esc(it.en)}</span><span class="m-price">${esc(it.price)}</span></div>
+      <span class="m-en">${esc(it.en)}</span><span class="m-price">${esc(it.price)}</span></div></div>
     <span data-ctl="${key}">${qtyCtl(key)}</span></div>`;
 }
 
