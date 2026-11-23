@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bếp & phân công – Phúc Tâm</title>
+<link rel="icon" href="logo.jpg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0D0B08">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Oswald:wght@500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<script src="firebase-config.js"></script>
+</head>
+<body>
+<header class="app-header">
+  <a class="app-brand" href="quan-ly.html"><img src="logo.jpg" alt=""><div><b>Phúc Tâm</b><span>Màn hình bếp</span></div></a>
+  <nav class="app-nav" aria-label="Màn hình nội bộ">
+    <a href="quan-ly.html">Sơ đồ bàn & QR</a>
+    <a href="bep.html" aria-current="page">Bếp & phân công</a>
+    <button type="button" class="btn btn-outline btn-sm" id="soundBtn" aria-pressed="false">Bật âm báo</button>
+    <span class="mode-badge" id="modeBadge"></span>
+  </nav>
+</header>
+
+<main class="page">
+  <div class="chips" role="tablist" aria-label="Chọn trạm" id="stationBar"></div>
+  <p class="hint" id="stationHint" style="margin-top:12px"></p>
+  <div id="board"></div>
+</main>
+
+<dialog class="dlg popup" id="popup" aria-labelledby="popTitle">
+  <div class="dlg-in">
+    <div class="dlg-head"><h2 id="popTitle">Món mới</h2><button type="button" class="icon-btn" id="popClose" aria-label="Đóng">×</button></div>
+    <div id="popBody" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div class="actions">
+      <button type="button" class="btn btn-gold" id="popMain"></button>
+      <button type="button" class="btn btn-outline" id="popOk">Đã xem</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="module" src="bep.js"></script>
+</body>
+</html>

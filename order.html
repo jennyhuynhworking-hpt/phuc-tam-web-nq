@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0D0B08">
+<title>Gọi món – Phúc Tâm</title>
+<link rel="icon" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Oswald:wght@500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<script src="firebase-config.js"></script>
+</head>
+<body class="guest">
+<header class="order-head">
+  <img src="logo.jpg" alt="Logo Phúc Tâm">
+  <div class="oh-brand"><b>Phúc Tâm</b><span>Gọi món tại bàn</span></div>
+  <span class="table-pill" id="tablePill" hidden></span>
+  <button type="button" class="icon-btn bell" id="bellBtn" aria-label="Gọi nhân viên" hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+  </button>
+</header>
+
+<div id="errBox" class="empty-state" hidden></div>
+<p id="loading" class="empty-state">Đang mở thực đơn…</p>
+
+<div id="menuView" hidden>
+  <nav class="cat-nav" id="tabNav" aria-label="Nhóm món"></nav>
+  <main class="o-wrap">
+    <button type="button" class="status-banner" id="statusBanner" hidden>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9DCA6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span><b id="statusText"></b><small>Bấm để xem trạng thái từng món</small></span>
+      <span class="chev" aria-hidden="true">›</span>
+    </button>
+    <div id="content"></div>
+  </main>
+</div>
+
+<div class="cart-bar" id="cartBar" hidden>
+  <button type="button" id="openCart"><span id="cartCount"></span><span>Xem giỏ & gửi order</span></button>
+</div>
+
+<dialog class="dlg sheet" id="cartDlg" aria-labelledby="cartTitle">
+  <div class="dlg-in">
+    <div class="dlg-head"><h2 id="cartTitle">Giỏ món</h2><button type="button" class="icon-btn" data-close aria-label="Đóng">×</button></div>
+    <div id="cartLines"></div>
+    <label class="f">Ghi chú cho bếp (ít cay, không hành, kiêng ngũ vị tân…)
+      <textarea id="cartNote" rows="2"></textarea>
+    </label>
+    <div class="total"><span>Tổng</span><b id="cartTotal"></b></div>
+    <button type="button" class="btn btn-gold" id="sendBtn" style="min-height:52px">Gửi order cho bếp</button>
+  </div>
+</dialog>
+
+<dialog class="dlg sheet" id="statusDlg" aria-labelledby="statusTitle">
+  <div class="dlg-in">
+    <div class="dlg-head"><h2 id="statusTitle">Món đã gọi</h2><button type="button" class="icon-btn" data-close aria-label="Đóng">×</button></div>
+    <div id="statusLines" aria-live="polite"></div>
+    <div class="total"><span>Tạm tính</span><b id="statusTotal"></b></div>
+    <p class="hint" style="margin:0">Muốn gọi thêm cứ chọn tiếp ở thực đơn. Thanh toán tại quầy hoặc bấm chuông để gọi nhân viên.</p>
+  </div>
+</dialog>
+
+<dialog class="dlg sheet" id="callDlg" aria-labelledby="callTitle">
+  <div class="dlg-in">
+    <div class="dlg-head"><h2 id="callTitle">Quý khách cần gì?</h2><button type="button" class="icon-btn" data-close aria-label="Đóng">×</button></div>
+    <div class="call-list" id="callList"></div>
+  </div>
+</dialog>
+
+<script type="module" src="order.js"></script>
+</body>
+</html>

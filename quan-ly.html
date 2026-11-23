@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Quản lý bàn & QR – Phúc Tâm</title>
+<link rel="icon" href="logo.jpg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0D0B08">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Oswald:wght@500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+<header class="app-header no-print">
+  <a class="app-brand" href="quan-ly.html"><img src="logo.jpg" alt=""><div><b>Phúc Tâm</b><span>Quản lý nhà hàng</span></div></a>
+  <nav class="app-nav" aria-label="Màn hình nội bộ">
+    <a href="quan-ly.html" aria-current="page">Sơ đồ bàn & QR</a>
+    <a href="bep.html">Bếp & phân công</a>
+    <a href="index.html" target="_blank">Website</a>
+    <span class="mode-badge" id="modeBadge"></span>
+  </nav>
+</header>
+
+<main class="page">
+  <div class="chips no-print" role="tablist" aria-label="Chức năng" id="tabs" style="margin-bottom:18px">
+    <button class="chip" role="tab" data-tab="so-do" aria-selected="true">Sơ đồ bàn</button>
+    <button class="chip" role="tab" data-tab="qr" aria-selected="false">Mã QR từng bàn</button>
+    <button class="chip" role="tab" data-tab="phan-cong" aria-selected="false">Phân công bếp</button>
+    <button class="chip" role="tab" data-tab="cai-dat" aria-selected="false">Cài đặt</button>
+  </div>
+
+  <section id="tab-so-do">
+    <div class="summary" id="summary"></div>
+    <div class="toolbar">
+      <div class="legend">
+        <span><i class="st-trong"></i>Bàn trống</span>
+        <span><i class="st-cho"></i>Đang chờ món</span>
+        <span><i class="st-xong"></i>Có món chờ mang ra</span>
+        <span><i class="st-du"></i>Đã lên đủ món</span>
+      </div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm" id="editBtn" aria-pressed="false">Chỉnh sơ đồ</button>
+        <button class="btn btn-gold btn-sm" id="addTableBtn">+ Thêm bàn</button>
+      </div>
+    </div>
+    <p class="hint" id="floorHint">Bấm vào bàn để xem món đã gọi, thanh toán hoặc đổi tên bàn.</p>
+    <div class="floor" id="floor" aria-label="Sơ đồ bàn"></div>
+  </section>
+
+  <section id="tab-qr" hidden>
+    <div class="panel no-print" style="margin-bottom:16px">
+      <div class="row">
+        <label class="f" style="flex:1 1 360px">Đường dẫn trang gọi món (tự điền theo tên miền đang chạy)
+          <input id="baseUrl" type="url">
+        </label>
+        <button class="btn btn-gold" id="printBtn">In tất cả mã QR</button>
+      </div>
+      <p class="hint" style="margin:10px 0 0">Mỗi mã mở đúng menu của bàn đó. In ra, ép plastic rồi dán lên bàn. Muốn đổi tên bàn, vào tab Sơ đồ bàn.</p>
+    </div>
+    <div class="qr-grid" id="qrGrid"></div>
+  </section>
+
+  <section id="tab-phan-cong" hidden>
+    <div class="panel">
+      <h2>Trạm làm món</h2>
+      <p class="hint">Mỗi trạm có một màn hình bếp riêng, món mới sẽ hiện popup theo thứ tự gọi.</p>
+      <div id="stations"></div>
+      <button class="btn btn-outline btn-sm" id="addStationBtn" style="margin-top:12px">+ Thêm trạm</button>
+    </div>
+    <div class="panel">
+      <h2>Nhóm món → trạm phụ trách</h2>
+      <p class="hint">Khách gọi món thuộc nhóm nào thì món đó được chuyển tới trạm tương ứng.</p>
+      <div class="map-grid" id="mapGrid"></div>
+    </div>
+  </section>
+
+  <section id="tab-cai-dat" hidden>
+    <div class="panel">
+      <h2>Thực đơn đang mở cho khách</h2>
+      <p class="hint">Ngày Rằm & mùng Một chuyển sang thực đơn ngày chay, khách quét QR sẽ thấy ngay.</p>
+      <label class="radio"><input type="radio" name="menu" value="thuong"> Ngày thường (thực đơn đầy đủ)</label>
+      <label class="radio"><input type="radio" name="menu" value="chay"> Ngày chay – Rằm & mùng Một</label>
+    </div>
+    <div class="panel">
+      <h2>Dữ liệu</h2>
+      <p class="hint" id="modeText"></p>
+      <button class="btn btn-danger btn-sm" id="resetBtn">Xóa toàn bộ order & khôi phục sơ đồ mặc định</button>
+    </div>
+  </section>
+</main>
+
+<dialog class="dlg" id="tableDlg" aria-labelledby="dlgTitle">
+  <div class="dlg-in">
+    <div class="dlg-head"><h2 id="dlgTitle"></h2><button type="button" class="icon-btn" id="dlgClose" aria-label="Đóng">×</button></div>
+    <div id="dlgBody"></div>
+  </div>
+</dialog>
+
+<script type="module" src="quan-ly.js"></script>
+</body>
+</html>
