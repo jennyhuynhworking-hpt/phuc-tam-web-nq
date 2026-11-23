@@ -66,5 +66,19 @@ export const DEFAULT_CONFIG = {
     { id: 'nguoi', name: 'Bếp nguội – Khai vị' },
     { id: 'nuoc', name: 'Quầy nước' }
   ],
-  catStation: catStation
+  catStation: catStation,
+  delivery: {
+    enabled: true,
+    minOrder: 100000,
+    prepMin: 30,
+    payMinutes: 15,
+    areas: [
+      { name: 'Quận 4', fee: 15000 },
+      { name: 'Quận 1', fee: 25000 },
+      { name: 'Quận 7', fee: 30000 },
+      { name: 'Quận 8', fee: 30000 },
+      { name: 'Quận 5', fee: 30000 },
+      { name: 'Bình Thạnh', fee: 40000 }
+    ]
+  }
 };

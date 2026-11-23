@@ -23,3 +23,47 @@ export function showFatal(err) {
   box.textContent = 'Không kết nối được dữ liệu. Kiểm tra lại cấu hình Firebase trong firebase-config.js hoặc mạng internet. (' + (err && err.message ? err.message : err) + ')';
   document.body.prepend(box);
 }
+
+export const dayKey = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+export const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+export const fmtDate = (ts) => new Date(ts).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
+export const fmtDateTime = (ts) => new Date(ts).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+// Mã BIN ngân hàng dùng cho VietQR
+export const BANKS = [
+  ['970436', 'Vietcombank'], ['970407', 'Techcombank'], ['970422', 'MB Bank'], ['970416', 'ACB'],
+  ['970415', 'VietinBank'], ['970418', 'BIDV'], ['970405', 'Agribank'], ['970432', 'VPBank'],
+  ['970423', 'TPBank'], ['970403', 'Sacombank'], ['970441', 'VIB'], ['970437', 'HDBank'],
+  ['970448', 'OCB'], ['970426', 'MSB'], ['970443', 'SHB'], ['970431', 'Eximbank'], ['970440', 'SeABank']
+];
+export function vietQR(bank, amount, info) {
+  if (!bank || !bank.bin || !bank.account) return '';
+  const q = new URLSearchParams({ amount: String(Math.round(amount)), addInfo: info || '', accountName: bank.name || '' });
+  return `https://img.vietqr.io/image/${bank.bin}-${encodeURIComponent(bank.account)}-compact2.png?${q}`;
+}
+
+// Âm báo dùng chung
+let audioCtx = null;
+export function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.22].forEach((t, i) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.frequency.value = i ? 1046 : 784;
+      g.gain.setValueAtTime(0.0001, audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + t + 0.2);
+      o.connect(g).connect(audioCtx.destination); o.start(audioCtx.currentTime + t); o.stop(audioCtx.currentTime + t + 0.22);
+    });
+  } catch (e) { console.warn(e); }
+}
+
+// Giờ nhận khách / nhận đơn
+export const SHIFTS = [['09:00', '13:30'], ['16:30', '20:30']];
+export const nowHM = () => new Date().toTimeString().slice(0, 5);
+export const inShift = (hm) => SHIFTS.some(([a, b]) => hm >= a && hm <= b);
+export const DSTATUS = {
+  cho_tt: 'Chờ xác nhận thanh toán', bep: 'Đã thanh toán – bếp đang làm', san_sang: 'Đã đóng gói – chờ giao',
+  dang_giao: 'Đang giao', xong: 'Đã giao xong', huy: 'Đã hủy'
+};
+export const shortCode = () => Math.random().toString(36).slice(2, 6).toUpperCase().replace(/[O0I1]/g, 'X');

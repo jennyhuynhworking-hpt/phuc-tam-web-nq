@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D0B08">
+<title>Đặt món giao tận nơi – Nhà Hàng Chay Phúc Tâm</title>
+<meta name="description" content="Đặt món chay Phúc Tâm giao tận nơi, thanh toán chuyển khoản trước. Quận 4 và các quận lân cận.">
+<link rel="icon" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Oswald:wght@500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<script src="firebase-config.js"></script>
+</head>
+<body class="guest">
+<header class="order-head">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit"><img src="logo.jpg" alt="Logo Phúc Tâm"><div class="oh-brand"><b>Phúc Tâm</b><span>Đặt món giao tận nơi</span></div></a>
+  <a class="table-pill" href="tel:0358449199" style="text-decoration:none">035 844 9199</a>
+</header>
+
+<div class="steps" id="steps" aria-label="Các bước đặt hàng">
+  <span data-step="menu">1. Chọn món</span><span data-step="info">2. Thông tin giao</span><span data-step="pay">3. Thanh toán</span><span data-step="track">4. Theo dõi</span>
+</div>
+<p id="loading" class="empty-state">Đang mở thực đơn…</p>
+<div id="closedBanner" class="closed-banner" hidden></div>
+
+<!-- Bước 1: chọn món -->
+<section id="v-menu" hidden>
+  <nav class="cat-nav" id="tabNav" aria-label="Nhóm món"></nav>
+  <main class="o-wrap" id="menuContent"></main>
+</section>
+
+<!-- Bước 2: thông tin giao hàng -->
+<section id="v-info" class="o-wrap" hidden>
+  <div class="welcome"><h1>Thông tin giao hàng</h1><p>Đơn giao hàng cần chuyển khoản trước. Bếp bắt đầu làm ngay khi Phúc Tâm xác nhận đã nhận tiền.</p></div>
+  <div class="panel stack" style="margin-top:14px">
+    <label class="f">Họ và tên<input id="dName" autocomplete="name"></label>
+    <label class="f">Số điện thoại<input id="dPhone" type="tel" autocomplete="tel" placeholder="09xx xxx xxx"></label>
+    <label class="f">Khu vực giao<select id="dArea"></select></label>
+    <label class="f">Địa chỉ chi tiết (số nhà, đường, phường, chung cư/tầng…)<input id="dAddr" autocomplete="street-address"></label>
+    <div class="seg pay-seg" role="group" aria-label="Thời gian giao">
+      <button type="button" data-when="asap" aria-pressed="true">Giao sớm nhất</button>
+      <button type="button" data-when="later" aria-pressed="false">Hẹn giờ hôm nay</button>
+    </div>
+    <label class="f" id="whenWrap" hidden>Giờ muốn nhận<input id="dTime" type="time"></label>
+    <label class="f">Ghi chú cho quán (ít cay, gọi trước khi tới, kiêng ngũ vị tân…)<textarea id="dNote" rows="2"></textarea></label>
+  </div>
+  <div class="panel stack" style="margin-top:14px">
+    <div id="infoLines" class="lines"></div>
+    <div class="line"><span>Tạm tính</span><span id="sumSub"></span></div>
+    <div class="line"><span>Phí giao hàng</span><span id="sumShip"></span></div>
+    <div class="total"><span>Tổng thanh toán</span><b id="sumTotal"></b></div>
+    <p class="hint" id="infoWarn" style="margin:0"></p>
+    <div class="actions"><button type="button" class="btn btn-outline" id="backMenu">← Sửa món</button><button type="button" class="btn btn-gold" id="placeBtn" style="flex:1">Đặt hàng & thanh toán</button></div>
+  </div>
+</section>
+
+<!-- Bước 3–4: thanh toán & theo dõi -->
+<section id="v-track" class="o-wrap" hidden>
+  <div id="trackBox"></div>
+</section>
+
+<div class="cart-bar" id="cartBar" hidden>
+  <button type="button" id="goInfo"><span id="cartCount"></span><span>Tiếp tục đặt hàng →</span></button>
+</div>
+
+<script type="module" src="dat-hang.js"></script>
+</body>
+</html>

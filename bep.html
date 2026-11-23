@@ -21,8 +21,8 @@
 <header class="app-header">
   <a class="app-brand" href="quan-ly.html"><img src="logo.jpg" alt=""><div><b>Phúc Tâm</b><span>Màn hình bếp</span></div></a>
   <nav class="app-nav" aria-label="Màn hình nội bộ">
-    <a href="quan-ly.html">Sơ đồ bàn & QR</a>
-    <a href="bep.html" aria-current="page">Bếp & phân công</a>
+    <a href="quan-ly.html">Quản lý</a>
+    <a href="bep.html" aria-current="page">Bếp & phục vụ</a>
     <button type="button" class="btn btn-outline btn-sm" id="soundBtn" aria-pressed="false">Bật âm báo</button>
     <span class="mode-badge" id="modeBadge"></span>
   </nav>
@@ -30,7 +30,16 @@
 
 <main class="page">
   <div class="chips" role="tablist" aria-label="Chọn trạm" id="stationBar"></div>
-  <p class="hint" id="stationHint" style="margin-top:12px"></p>
+  <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+    <p class="hint" id="stationHint" style="margin:0"></p>
+    <div class="actions" id="viewTools">
+      <div class="seg" role="group" aria-label="Cách xem">
+        <button type="button" data-view="order" aria-pressed="true">Theo bàn</button>
+        <button type="button" data-view="dish" aria-pressed="false">Gom theo món</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="autoAccept"> Tự nhận món mới</label>
+    </div>
+  </div>
   <div id="board"></div>
 </main>
 

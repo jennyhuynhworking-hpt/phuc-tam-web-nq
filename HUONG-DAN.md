@@ -1,147 +1,123 @@
-# HƯỚNG DẪN TRIỂN KHAI – Phúc Tâm (Website + Gọi món QR + Quản lý + Bếp)
+# HƯỚNG DẪN – Nhà Hàng Chay Phúc Tâm (Website + Gọi món QR + Quản lý + Bếp)
 
-## 0. Bộ code gồm gì
-| File | Vai trò |
-|---|---|
-| index.html, style.css, script.js | Website giới thiệu cho khách |
-| order.html, order.js | App gọi món trên điện thoại khách (mở bằng QR) |
-| quan-ly.html, quan-ly.js | Quản lý: sơ đồ bàn, in QR, phân công, thanh toán |
-| bep.html, bep.js | Màn hình bếp theo trạm + chạy món + khách gọi |
-| menu-data.js | Thực đơn dùng cho app gọi món (ngày thường + ngày chay) |
-| store.js, common.js, app.css | Dùng chung (dữ liệu, tiện ích, giao diện) |
-| firebase-config.js | Nơi dán cấu hình Firebase (bật đồng bộ thật) |
-| manifest.json, icon-192.png, icon-512.png | Cài app Quản lý/Bếp ra màn hình chính |
-| *.jpg | Logo và ảnh món |
+## 0. Các màn hình
+| Link | Ai dùng | Làm gì |
+|---|---|---|
+| `/` (index.html) | Khách | Website giới thiệu, xem thực đơn, đặt bàn (gửi thẳng về trang Quản lý) |
+| `/dat-hang.html` | Khách đặt online | Đặt món giao tận nơi, chuyển khoản trước, theo dõi đơn |
+| `/order.html?ban=B1` | Khách (quét QR) | Gọi món tại bàn, xem trạng thái món, bấm chuông gọi nhân viên |
+| `/quan-ly.html` | Chủ quán / thu ngân | Sơ đồ & thanh toán, Đặt bàn, Thực đơn, Báo cáo thu chi, Mã QR, Phân công bếp, Cài đặt |
+| `/bep.html?tram=…` | Bếp / phục vụ | Màn hình từng trạm, gom món, chạy món & khách gọi |
 
-Tất cả file nằm CÙNG MỘT CẤP, không có thư mục con.
+Tất cả file nằm CÙNG MỘT CẤP trong repo (kể cả ảnh .jpg, .png).
 
----
-
-## BƯỚC 1 – Đưa code lên GitHub
+## 1. Cập nhật code lên GitHub
 1. Giải nén phuc-tam-web.zip.
-2. Vào repo phuc-tam-web-nq → Add file → Upload files.
-3. Chọn tất cả file trong thư mục đã giải nén (Ctrl + A) → kéo thả vào → Commit changes.
-   File trùng tên sẽ được ghi đè.
-4. Vercel tự deploy lại sau khoảng 30 giây.
+2. Repo → Add file → Upload files → kéo thả TẤT CẢ file (Ctrl + A) → Commit changes.
+3. **Giữ nguyên file firebase-config.js đang có trên GitHub** (đã dán cấu hình). Nếu lỡ ghi đè, dán lại cấu hình Firebase.
+4. Có thể xóa file script.js cũ trên GitHub (không còn dùng).
 
-Kiểm tra nhanh: mở https://phuc-tam-web-nq.vercel.app/quan-ly.html – thấy sơ đồ 12 bàn là đúng.
-
----
-
-## BƯỚC 2 – Test thử trên 1 máy (chế độ demo, chưa cần Firebase)
-Mở 3 tab trên cùng trình duyệt:
-- Tab 1: …/bep.html
-- Tab 2: …/quan-ly.html
-- Tab 3: …/order.html?ban=B3
-
-Ở tab 3: chọn món → Xem giỏ → Gửi order. Bấm chuông → Xin thanh toán.
-→ Tab 1 hiện popup món mới; tab 2 Bàn 3 đổi màu, hiện nhãn "Đang gọi".
-
-Chế độ demo chỉ đồng bộ giữa các tab trên CÙNG máy. Muốn điện thoại khách gửi được tới máy bếp, làm Bước 3.
-
----
-
-## BƯỚC 3 – Bật Firebase để đồng bộ nhiều thiết bị (miễn phí, ~10 phút)
-1. Vào https://console.firebase.google.com → đăng nhập Gmail → Create a project
-   → đặt tên (vd: phuc-tam) → có thể tắt Google Analytics → Create.
-2. Menu trái: Build → Firestore Database → Create database
-   → Location: asia-southeast1 (Singapore) → Start in **test mode** → Create.
-3. Bấm bánh răng (Project settings) → kéo xuống Your apps → bấm biểu tượng </> (Web)
-   → đặt tên (vd: phuc-tam-web) → Register app.
-4. Firebase hiện đoạn code có `const firebaseConfig = { ... }`. Copy phần trong ngoặc { }.
-5. Trên GitHub mở file firebase-config.js → bấm bút chì (Edit) → sửa dòng
-   `window.FIREBASE_CONFIG = null;` thành:
-   ```js
-   window.FIREBASE_CONFIG = {
-     apiKey: "AIza....",
-     authDomain: "phuc-tam.firebaseapp.com",
-     projectId: "phuc-tam",
-     storageBucket: "phuc-tam.appspot.com",
-     messagingSenderId: "....",
-     appId: "...."
-   };
-   ```
-   → Commit changes.
-6. Đợi Vercel deploy xong → mở quan-ly.html, góc phải hiện **"Đang đồng bộ thật"** là thành công.
-
-Firestore test mode tự khóa sau 30 ngày. Muốn demo lâu hơn: Firestore → tab Rules → dán:
+## 2. Cập nhật Firestore Rules (bắt buộc, vì có thêm dữ liệu mới)
+Firebase Console → Databases & Storage → Firestore → tab **Rules** → dán → **Publish**:
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /phuctam/{doc} { allow read, write: if true; }
-    match /tickets/{doc} { allow read, write: if true; }
-    match /calls/{doc}   { allow read, write: if true; }
+    match /phuctam/{doc}  { allow read, write: if true; }
+    match /tickets/{doc}  { allow read, write: if true; }
+    match /calls/{doc}    { allow read, write: if true; }
+    match /bookings/{doc} { allow read, write: if true; }
+    match /bills/{doc}    { allow read, write: if true; }
+    match /expenses/{doc} { allow read, write: if true; }
+    match /deliveries/{doc} { allow read, write: if true; }
   }
 }
 ```
-→ Publish. (Vẫn là quyền mở – chỉ dùng cho giai đoạn demo.)
+(Quyền mở – chỉ dùng giai đoạn demo. Bản chính thức sẽ thêm đăng nhập nhân viên.)
 
----
+## 3. Cài đặt ban đầu (quan-ly.html → tab Cài đặt)
+1. **Tài khoản nhận chuyển khoản**: chọn ngân hàng, nhập số tài khoản, tên chủ tài khoản (KHÔNG DẤU, IN HOA) → Lưu.
+   Quét mã thử 10.000đ bằng app ngân hàng, kiểm tra hiện đúng tên tài khoản.
+2. **Thông tin in trên bill**: địa chỉ, SĐT, lời cảm ơn, khổ giấy 80mm hoặc 58mm.
+3. **Thực đơn đang mở**: Ngày thường / Ngày chay.
 
-## BƯỚC 4 – Cài đặt cho quán (máy Quản lý)
-Mở …/quan-ly.html:
-1. **Sơ đồ bàn** → bấm "Chỉnh sơ đồ" → kéo thả bàn theo vị trí thật → "Xong".
-   "+ Thêm bàn" để thêm; bấm vào bàn → "Đổi tên / số chỗ / xóa bàn".
-2. **Phân công bếp** → đặt tên trạm (vd: Bếp nóng, Bếp nguội – Khai vị, Quầy nước)
-   → chọn mỗi nhóm món thuộc trạm nào.
-3. **Cài đặt** → chọn thực đơn đang mở: Ngày thường / Ngày chay (Rằm & mùng Một).
-4. **Mã QR từng bàn** → kiểm tra đường dẫn là tên miền Vercel → "In tất cả mã QR"
-   → in, ép plastic, dán lên đúng bàn.
-   Đổi tên bàn KHÔNG cần in lại QR (QR dùng mã bàn B1, B2…).
+## 4. Sửa thực đơn (tab Thực đơn)
+- Chọn Ngày thường / Ngày chay ở trên cùng.
+- Sửa trực tiếp tên, tên tiếng Anh, giá (vd `55k`, `10k/cuốn`), tick Must try.
+- **Hết món**: bỏ tick "Còn" → khách thấy "Tạm hết", không gọi được. Có món lại thì tick lại.
+- Thêm/xóa món, thêm/xóa/đổi thứ tự nhóm.
+- Bấm **Lưu thực đơn** → app gọi món và website đổi ngay.
+- **Cách nhanh bằng Excel**: "Tải file Excel" → sửa trong Excel (giữ nguyên tên cột) → "Nhập từ Excel" → kiểm tra → Lưu.
+  Cột: Thực đơn | Nhóm | Tên món | Tên tiếng Anh | Giá | Must try (x) | Hết món (x).
+- Nhóm món mới: vào tab **Phân công bếp** chọn trạm cho nhóm đó.
 
----
+## 5. Đặt bàn
+- Khách đặt trên website → trang Quản lý **hiện popup** (bấm "Bật âm báo" để có chuông), tab Đặt bàn có số đỏ.
+- Gọi khách xác nhận → "Đã gọi – Xác nhận". Khách tới → "Khách đã đến". Hủy nếu khách báo hủy.
+- Khách gọi điện đặt: "+ Thêm đặt bàn".
+- Website chỉ nhận giờ 9:00–13:30 và 16:30–20:30.
 
-## BƯỚC 5 – Cài màn hình Bếp & Phục vụ
-Mỗi trạm 1 máy tính bảng / điện thoại:
-- Bếp nóng: …/bep.html?tram=nong
-- Bếp nguội – Khai vị: …/bep.html?tram=nguoi
-- Quầy nước: …/bep.html?tram=nuoc
-- Nhân viên chạy món / phục vụ: …/bep.html?tram=chaymon
-(Trạm tự tạo thêm: vào Phân công bếp → "Mở màn hình trạm" để lấy link.)
+## 6. Bếp – phân công không cần bấm từng món
+Mỗi trạm 1 máy: `bep.html?tram=nong`, `?tram=nguoi`, `?tram=nuoc`, phục vụ `?tram=chaymon`.
+- **Theo bàn**: mỗi thẻ là 1 lần gọi của 1 bàn → bấm **1 nút "Bắt đầu cả N món" / "Xong cả N món"**. Vẫn bấm riêng từng món được nếu cần.
+- **Gom theo món**: món giống nhau từ nhiều bàn gộp lại (vd "Pad Thái × 5 – Bàn 2, Bàn 6…") → nấu một mẻ → **"Xong cả 5 phần"**.
+- **Tự nhận món mới**: tick để món mới tự vào cột Đang làm, không cần bấm nhận.
+- Popup món mới có nút **"Nhận tất cả & bắt đầu làm"**.
+- Màn hình **Chạy món & khách gọi**: món xong gom theo bàn → "Đã mang ra hết"; khách bấm chuông → popup đỏ → "Đã xử lý".
+- Bấm "Bật âm báo" (màn hình sẽ không tự tắt). Thêm vào màn hình chính cho tiện.
 
-Trên mỗi máy:
-1. Mở link → bấm **"Bật âm báo"** (bắt buộc bấm 1 lần thì trình duyệt mới cho kêu; đồng thời giữ màn hình không tắt).
-2. Cài ra màn hình chính cho tiện:
-   - Android (Chrome): menu ⋮ → "Thêm vào màn hình chính" / "Cài đặt ứng dụng".
-   - iPhone/iPad (Safari): nút Chia sẻ → "Thêm vào MH chính".
-3. Để máy cắm sạc, tắt chế độ tự khóa màn hình.
+## 7. Thanh toán (tab Sơ đồ & thanh toán)
+1. Bấm bàn → **Thanh toán** (hoặc "In tạm tính" – có in sẵn mã QR chuyển khoản).
+2. Nhập giảm giá nếu có. Màn hình hiện số tiền khách cần trả.
+3. Chọn:
+   - **Chuyển khoản**: hiện mã VietQR đúng số tiền → đưa khách quét → thấy app ngân hàng báo tiền về → "Đã nhận chuyển khoản & in bill".
+   - **Tiền mặt**: nhập/bấm số tiền khách đưa → hiện tiền thối → "Đã thu tiền & in bill".
+4. Bàn được dọn, hóa đơn lưu vào báo cáo.
 
-Cách bếp làm việc:
-- Có món mới → popup liệt kê theo bàn, số **#1, #2…** là thứ tự làm.
-- "Nhận & bắt đầu làm" → món sang cột Đang làm → làm xong bấm "Xong món".
-- Màn hình Chạy món nhận popup món đã xong → mang ra bàn → "Đã lên món".
-- Khách bấm chuông → popup đỏ ở màn hình Chạy món và nhãn "Đang gọi" trên sơ đồ → xử lý xong bấm "Đã xử lý".
-- Món chờ quá 15 phút chuyển viền đỏ.
+## 8. Máy in bill
+Dùng máy in nhiệt khổ 80mm/58mm có cổng USB hoặc LAN (Xprinter, Epson TM, Antech…).
+1. Cắm máy in vào máy tính thu ngân, cài driver của hãng.
+2. Windows → Máy in → đặt máy in nhiệt làm **mặc định**; khổ giấy 80mm (hoặc 58mm), lề 0.
+3. Lần đầu bấm "In bill": trong hộp thoại in chọn máy in nhiệt, Lề = Không, bỏ "Đầu trang và chân trang" → In.
+4. **In không cần bấm xác nhận** (máy thu ngân dùng Chrome): chuột phải shortcut Chrome → Properties → ô Target thêm
+   ` --kiosk-printing` vào cuối → OK → mở Chrome bằng shortcut này để vào quan-ly.html. Bill sẽ in thẳng ra máy mặc định.
+5. Điện thoại/máy tính bảng Android: cài app in của hãng hoặc "RawBT", chọn in qua Bluetooth/LAN từ hộp thoại in.
 
----
+## 9. Báo cáo thu chi (tab Báo cáo thu chi)
+- Chọn Hôm nay / Hôm qua / 7 ngày / Tháng này hoặc chọn từ ngày – đến ngày.
+- Xem: doanh thu, số bill, trung bình/bill, tiền mặt, chuyển khoản, chi phí, **Thu – Chi**.
+- **Món bán chạy** (số phần, doanh thu), doanh thu theo nhóm món, theo giờ (hoặc theo ngày).
+- **Ghi chi phí**: nguyên liệu, nhân công, điện nước gas… → tính vào Thu – Chi.
+- Danh sách hóa đơn, **In lại** bill. **Xuất Excel** (3 sheet: hóa đơn, chi tiết món, chi phí).
 
-## BƯỚC 6 – Test thật bằng điện thoại
-1. Máy bếp mở bep.html (đã bật âm báo), máy quản lý mở quan-ly.html.
-2. Dùng điện thoại quét QR Bàn 1 → chọn món → Gửi order.
-3. Kiểm tra: máy bếp kêu + popup; sơ đồ Bàn 1 đổi màu; điện thoại thấy trạng thái món đổi theo bếp.
-4. Bấm chuông trên điện thoại → "Xin thanh toán" → màn hình chạy món báo.
-5. Máy quản lý bấm Bàn 1 → "Thanh toán & dọn bàn".
+## 10. Đặt món giao hàng (thanh toán trước)
+Luồng: Khách chọn món → nhập địa chỉ, khu vực → **chuyển khoản theo mã QR** → quán xác nhận tiền → bếp làm → đóng gói → giao → xong.
 
----
+| Trạng thái | Ai làm | Thao tác |
+|---|---|---|
+| Chờ xác nhận thanh toán | Thu ngân | Popup "Đơn mới" / "Khách báo đã CK" → mở app ngân hàng kiểm tra đúng số tiền và **nội dung CK (vd PTE2XD 5678)** → "Đã nhận tiền → chuyển bếp". Không thấy tiền → "Hủy" (ghi lý do) |
+| Bếp đang làm | Bếp | Món hiện như bình thường, có nhãn **GIAO HÀNG** |
+| Chờ giao | Phục vụ | Màn hình Chạy món → đóng gói → "Đã đóng gói xong" (đơn tự chuyển sang Chờ giao). Thu ngân "In phiếu giao" dán lên túi |
+| Đang giao | Thu ngân | "Giao cho shipper" → nhập tên/SĐT shipper (nhân viên quán, Grab, Be…) |
+| Hoàn thành | Thu ngân | "Đã giao xong" |
 
-## Vận hành hằng ngày
-- Ngày Rằm / mùng Một: quan-ly.html → Cài đặt → Ngày chay. Hôm sau chuyển lại Ngày thường.
-- Khách thanh toán: bấm bàn trên sơ đồ → Thanh toán & dọn bàn.
-- Đổi giá / thêm món: sửa menu-data.js trên GitHub (dòng dạng T('Tên', 'English', '55k', 1)) → Commit.
-  Website giới thiệu dùng script.js – nếu đổi giá thì sửa cả 2 file.
-- Ảnh món nổi bật trên app khách: khai báo trong order.js (mảng FEATURED).
+- Khách thấy trạng thái từng bước trên điện thoại (trang tự cập nhật). Đơn chưa chuyển khoản được giữ 15 phút.
+- Cài đặt → **Giao hàng**: bật/tắt nhận đơn, đơn tối thiểu, thời gian chuẩn bị, khu vực & phí ship (mỗi dòng `Tên khu vực | Phí`). **Phí ship mặc định là số mẫu – sửa lại theo thực tế.**
+- Chỉ nhận đơn 9:00–13:30 và 16:30–20:30 và khi đã cài tài khoản ngân hàng.
+- Đơn đã thanh toán mà phải hủy: "Hủy & hoàn tiền" → hệ thống ghi khoản hoàn vào chi phí; nhớ chuyển trả khách.
+- Doanh thu giao hàng tính vào báo cáo ngay khi xác nhận tiền (có ô "Giao hàng" riêng).
 
-## Gỡ lỗi thường gặp
+## 11. Vận hành hằng ngày
+- Đầu ca: máy bếp mở bep.html + bật âm báo; máy thu ngân mở quan-ly.html + bật âm báo.
+- Rằm / mùng Một: Cài đặt → Ngày chay. Hôm sau chuyển lại.
+- Món hết giữa ca: Thực đơn → bỏ tick "Còn" → Lưu.
+- Cuối ngày: Báo cáo → Hôm nay → nhập chi phí → Xuất Excel lưu trữ.
+
+## Gỡ lỗi
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Điện thoại gửi order nhưng bếp không thấy | Chưa bật Firebase (góc phải ghi "Chế độ demo") → làm Bước 3 |
-| Báo "Không kết nối được dữ liệu" | Sai cấu hình trong firebase-config.js hoặc Firestore hết hạn test mode → xem Bước 3 |
-| Quét QR báo "Không tìm thấy bàn" | Bàn đã bị xóa trên sơ đồ; tạo lại hoặc in QR mới |
-| Bếp không kêu | Bấm "Bật âm báo", tăng âm lượng máy, không để tab chạy nền quá lâu |
-| Sửa code nhưng web chưa đổi | Đợi Vercel deploy xong (tab Deployments) rồi tải lại trang (Ctrl + F5) |
-
-## Trước khi dùng chính thức (giai đoạn sau)
-- Thêm đăng nhập cho nhân viên ở quan-ly.html và bep.html.
-- Siết Firestore Rules: khách chỉ được tạo order, không sửa/xóa.
-- Gắn tên miền riêng (Vercel → Settings → Domains).
+| Đặt bàn/thanh toán báo lỗi "permission" | Chưa cập nhật Firestore Rules (Bước 2) |
+| Không hiện mã QR chuyển khoản | Chưa cài tài khoản ở Cài đặt, hoặc mất mạng |
+| In bill bị lề/chữ nhỏ | Hộp thoại in: Lề = Không, Tỷ lệ 100%, khổ giấy đúng 80mm |
+| Sửa thực đơn chưa thấy đổi | Chưa bấm "Lưu thực đơn"; tải lại trang khách |
+| Popup không kêu | Bấm "Bật âm báo" mỗi lần mở trang |

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Quản lý bàn & QR – Phúc Tâm</title>
+<title>Quản lý – Phúc Tâm</title>
 <link rel="icon" href="logo.jpg">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -16,23 +16,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Oswald:wght@500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="firebase-config.js"></script>
 </head>
 <body>
 <header class="app-header no-print">
   <a class="app-brand" href="quan-ly.html"><img src="logo.jpg" alt=""><div><b>Phúc Tâm</b><span>Quản lý nhà hàng</span></div></a>
   <nav class="app-nav" aria-label="Màn hình nội bộ">
-    <a href="quan-ly.html" aria-current="page">Sơ đồ bàn & QR</a>
-    <a href="bep.html">Bếp & phân công</a>
+    <a href="quan-ly.html" aria-current="page">Quản lý</a>
+    <a href="bep.html">Bếp & phục vụ</a>
     <a href="index.html" target="_blank">Website</a>
+    <button type="button" class="btn btn-outline btn-sm" id="soundBtn" aria-pressed="false">Bật âm báo</button>
     <span class="mode-badge" id="modeBadge"></span>
   </nav>
 </header>
 
-<main class="page">
-  <div class="chips no-print" role="tablist" aria-label="Chức năng" id="tabs" style="margin-bottom:18px">
-    <button class="chip" role="tab" data-tab="so-do" aria-selected="true">Sơ đồ bàn</button>
-    <button class="chip" role="tab" data-tab="qr" aria-selected="false">Mã QR từng bàn</button>
+<main class="page no-print">
+  <div class="chips" role="tablist" aria-label="Chức năng" id="tabs" style="margin-bottom:18px">
+    <button class="chip" role="tab" data-tab="so-do" aria-selected="true">Sơ đồ & thanh toán</button>
+    <button class="chip" role="tab" data-tab="dat-ban" aria-selected="false">Đặt bàn <span class="count" id="bookCount" hidden></span></button>
+    <button class="chip" role="tab" data-tab="giao-hang" aria-selected="false">Giao hàng <span class="count" id="dvCount" hidden></span></button>
+    <button class="chip" role="tab" data-tab="thuc-don" aria-selected="false">Thực đơn</button>
+    <button class="chip" role="tab" data-tab="bao-cao" aria-selected="false">Báo cáo thu chi</button>
+    <button class="chip" role="tab" data-tab="qr" aria-selected="false">Mã QR</button>
     <button class="chip" role="tab" data-tab="phan-cong" aria-selected="false">Phân công bếp</button>
     <button class="chip" role="tab" data-tab="cai-dat" aria-selected="false">Cài đặt</button>
   </div>
@@ -51,19 +57,63 @@
         <button class="btn btn-gold btn-sm" id="addTableBtn">+ Thêm bàn</button>
       </div>
     </div>
-    <p class="hint" id="floorHint">Bấm vào bàn để xem món đã gọi, thanh toán hoặc đổi tên bàn.</p>
+    <p class="hint" id="floorHint"></p>
     <div class="floor" id="floor" aria-label="Sơ đồ bàn"></div>
   </section>
 
-  <section id="tab-qr" hidden>
-    <div class="panel no-print" style="margin-bottom:16px">
-      <div class="row">
-        <label class="f" style="flex:1 1 360px">Đường dẫn trang gọi món (tự điền theo tên miền đang chạy)
-          <input id="baseUrl" type="url">
-        </label>
-        <button class="btn btn-gold" id="printBtn">In tất cả mã QR</button>
+  <section id="tab-dat-ban" hidden>
+    <div class="toolbar"><p class="hint" style="margin:0">Yêu cầu đặt bàn từ website hiện ở đây và báo popup. Gọi xác nhận cho khách rồi bấm "Xác nhận".</p>
+      <button class="btn btn-gold btn-sm" id="addBookingBtn">+ Thêm đặt bàn (khách gọi điện)</button></div>
+    <div id="bookList"></div>
+  </section>
+
+  <section id="tab-giao-hang" hidden>
+    <div class="toolbar"><p class="hint" style="margin:0">Đơn đặt trên web (dat-hang.html). Kiểm tra app ngân hàng thấy đúng số tiền + nội dung CK rồi bấm "Đã nhận tiền" – bếp mới nhận món.</p>
+      <a class="btn btn-outline btn-sm" href="dat-hang.html" target="_blank">Mở trang đặt hàng</a></div>
+    <div class="dv-board" id="dvBoard"></div>
+  </section>
+
+  <section id="tab-thuc-don" hidden>
+    <div class="panel sticky-tools">
+      <div class="toolbar" style="margin:0">
+        <div class="seg" role="group" aria-label="Chọn thực đơn" id="menuSeg"></div>
+        <div class="actions">
+          <button class="btn btn-outline btn-sm" id="menuExport">Tải file Excel</button>
+          <label class="btn btn-outline btn-sm" style="cursor:pointer">Nhập từ Excel<input type="file" id="menuImport" accept=".xlsx,.xls,.csv" hidden></label>
+          <button class="btn btn-outline btn-sm" id="menuAddCat">+ Thêm nhóm</button>
+          <button class="btn btn-gold btn-sm" id="menuSave" disabled>Lưu thực đơn</button>
+        </div>
       </div>
-      <p class="hint" style="margin:10px 0 0">Mỗi mã mở đúng menu của bàn đó. In ra, ép plastic rồi dán lên bàn. Muốn đổi tên bàn, vào tab Sơ đồ bàn.</p>
+      <p class="hint" id="menuHint" style="margin:10px 0 0">Sửa trực tiếp tên, giá, bật/tắt Must try, đánh dấu Hết món. Bấm "Lưu thực đơn" để áp dụng ngay cho app gọi món và website.</p>
+    </div>
+    <div id="menuEditor"></div>
+  </section>
+
+  <section id="tab-bao-cao" hidden>
+    <div class="panel">
+      <div class="row">
+        <div class="chips" id="rangeChips">
+          <button class="chip" data-range="today" aria-selected="true">Hôm nay</button>
+          <button class="chip" data-range="yesterday" aria-selected="false">Hôm qua</button>
+          <button class="chip" data-range="7d" aria-selected="false">7 ngày</button>
+          <button class="chip" data-range="month" aria-selected="false">Tháng này</button>
+        </div>
+        <label class="f">Từ ngày<input type="date" id="rFrom"></label>
+        <label class="f">Đến ngày<input type="date" id="rTo"></label>
+        <button class="btn btn-outline btn-sm" id="rLoad">Xem</button>
+        <button class="btn btn-outline btn-sm" id="rExport">Xuất Excel</button>
+      </div>
+    </div>
+    <div id="report"></div>
+  </section>
+
+  <section id="tab-qr" hidden>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="row">
+        <label class="f" style="flex:1 1 360px">Đường dẫn trang gọi món<input id="baseUrl" type="url"></label>
+        <button class="btn btn-gold" id="printQrBtn">In tất cả mã QR</button>
+      </div>
+      <p class="hint" style="margin:10px 0 0">Mỗi mã mở đúng menu của bàn đó. Đổi tên bàn không cần in lại.</p>
     </div>
     <div class="qr-grid" id="qrGrid"></div>
   </section>
@@ -71,13 +121,12 @@
   <section id="tab-phan-cong" hidden>
     <div class="panel">
       <h2>Trạm làm món</h2>
-      <p class="hint">Mỗi trạm có một màn hình bếp riêng, món mới sẽ hiện popup theo thứ tự gọi.</p>
+      <p class="hint">Mỗi trạm có một màn hình bếp riêng; món mới hiện popup theo thứ tự gọi.</p>
       <div id="stations"></div>
       <button class="btn btn-outline btn-sm" id="addStationBtn" style="margin-top:12px">+ Thêm trạm</button>
     </div>
     <div class="panel">
       <h2>Nhóm món → trạm phụ trách</h2>
-      <p class="hint">Khách gọi món thuộc nhóm nào thì món đó được chuyển tới trạm tương ứng.</p>
       <div class="map-grid" id="mapGrid"></div>
     </div>
   </section>
@@ -85,24 +134,64 @@
   <section id="tab-cai-dat" hidden>
     <div class="panel">
       <h2>Thực đơn đang mở cho khách</h2>
-      <p class="hint">Ngày Rằm & mùng Một chuyển sang thực đơn ngày chay, khách quét QR sẽ thấy ngay.</p>
-      <label class="radio"><input type="radio" name="menu" value="thuong"> Ngày thường (thực đơn đầy đủ)</label>
+      <label class="radio"><input type="radio" name="menu" value="thuong"> Ngày thường</label>
       <label class="radio"><input type="radio" name="menu" value="chay"> Ngày chay – Rằm & mùng Một</label>
+    </div>
+    <div class="panel">
+      <h2>Tài khoản nhận chuyển khoản (hiện mã VietQR khi thanh toán)</h2>
+      <div class="row">
+        <label class="f">Ngân hàng<select id="bankBin"></select></label>
+        <label class="f">Số tài khoản<input id="bankAcc" inputmode="numeric"></label>
+        <label class="f" style="flex:1 1 220px">Tên chủ tài khoản<input id="bankName" placeholder="NGUYEN VAN A"></label>
+        <button class="btn btn-gold btn-sm" id="bankSave">Lưu</button>
+      </div>
+      <div id="bankPreview" style="margin-top:12px"></div>
+    </div>
+    <div class="panel">
+      <h2>Giao hàng</h2>
+      <label class="radio"><input type="checkbox" id="dvEnabled" style="width:20px;height:20px;accent-color:var(--gold)"> Đang nhận đơn giao hàng trên web</label>
+      <div class="row">
+        <label class="f">Đơn tối thiểu (đ)<input id="dvMin" type="number" step="1000" min="0" style="width:140px"></label>
+        <label class="f">Thời gian chuẩn bị (phút)<input id="dvPrep" type="number" min="5" style="width:120px"></label>
+        <label class="f">Giữ đơn chờ CK (phút)<input id="dvPay" type="number" min="5" style="width:120px"></label>
+      </div>
+      <label class="f" style="margin-top:10px">Khu vực & phí giao – mỗi dòng: Tên khu vực | Phí (đ)<textarea id="dvAreas" rows="6" placeholder="Quận 4 | 15000"></textarea></label>
+      <button class="btn btn-gold btn-sm" id="dvSave" style="margin-top:10px">Lưu cài đặt giao hàng</button>
+    </div>
+    <div class="panel">
+      <h2>Thông tin in trên bill</h2>
+      <div class="row">
+        <label class="f" style="flex:1 1 320px">Dòng địa chỉ<input id="billAddr"></label>
+        <label class="f">Số điện thoại<input id="billPhone"></label>
+        <label class="f" style="flex:1 1 320px">Lời cảm ơn cuối bill<input id="billThanks"></label>
+        <button class="btn btn-gold btn-sm" id="billSave">Lưu</button>
+      </div>
+      <p class="hint" style="margin:10px 0 0">Máy in bill: cài driver máy in nhiệt (khổ 80mm hoặc 58mm) trên máy tính/máy tính bảng, đặt làm máy in mặc định. Xem HUONG-DAN.md để in không cần bấm xác nhận.</p>
+      <label class="f" style="max-width:200px;margin-top:10px">Khổ giấy<select id="paperSize"><option value="80">80mm</option><option value="58">58mm</option></select></label>
     </div>
     <div class="panel">
       <h2>Dữ liệu</h2>
       <p class="hint" id="modeText"></p>
-      <button class="btn btn-danger btn-sm" id="resetBtn">Xóa toàn bộ order & khôi phục sơ đồ mặc định</button>
+      <button class="btn btn-danger btn-sm" id="resetBtn">Xóa order đang mở & khôi phục sơ đồ mặc định</button>
     </div>
   </section>
 </main>
 
 <dialog class="dlg" id="tableDlg" aria-labelledby="dlgTitle">
   <div class="dlg-in">
-    <div class="dlg-head"><h2 id="dlgTitle"></h2><button type="button" class="icon-btn" id="dlgClose" aria-label="Đóng">×</button></div>
+    <div class="dlg-head"><h2 id="dlgTitle"></h2><button type="button" class="icon-btn" data-close aria-label="Đóng">×</button></div>
     <div id="dlgBody"></div>
   </div>
 </dialog>
+
+<dialog class="dlg" id="bookDlg" aria-labelledby="bookTitle">
+  <div class="dlg-in">
+    <div class="dlg-head"><h2 id="bookTitle">Đặt bàn mới</h2><button type="button" class="icon-btn" data-close aria-label="Đóng">×</button></div>
+    <div id="bookBody"></div>
+  </div>
+</dialog>
+
+<div id="receipt" aria-hidden="true"></div>
 
 <script type="module" src="quan-ly.js"></script>
 </body>

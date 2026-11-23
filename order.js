@@ -1,5 +1,4 @@
-import { initStore } from './store.js';
-import { MENUS } from './menu-data.js';
+import { initStore, defaultMenu } from './store.js';
 import { $, esc, money, parsePrice, uid, STATUS, toast, showFatal } from './common.js';
 
 const tableId = new URLSearchParams(location.search).get('ban');
@@ -18,6 +17,8 @@ const FEATURED = [
 ];
 const CALLS = ['Gọi nhân viên', 'Xin thanh toán', 'Thêm chén đũa, khăn giấy', 'Thêm trà đá'];
 
+let MENU = defaultMenu();
+let menuLoaded = false;
 let config = null;
 let table = null;
 let menuKey = null;
@@ -26,7 +27,7 @@ let tickets = [];
 let calls = [];
 const cart = new Map();
 
-const menu = () => MENUS[menuKey] || MENUS.thuong;
+const menu = () => MENU[menuKey] || MENU.thuong;
 function itemOf(key) {
   const [ci, ii] = key.split('-').map(Number);
   const cat = menu().cats[ci];
@@ -49,6 +50,7 @@ function fail(title, msg) {
 
 /* ---------- Khung trang ---------- */
 function render() {
+  if (!config || !menuLoaded) return;
   table = config.tables.find((t) => t.id === tableId);
   if (!tableId || !table) { fail('Không tìm thấy bàn', 'Mã QR này chưa gắn với bàn nào. Quý khách vui lòng gọi nhân viên để được hỗ trợ.'); return; }
   $('loading').hidden = true; $('errBox').hidden = true; $('menuView').hidden = false;
@@ -67,6 +69,7 @@ function renderTabs() {
 }
 function qtyCtl(key, small) {
   const it = itemOf(key);
+  if (it.out) return '<span class="out-tag">Tạm hết</span>';
   const q = cart.get(key)?.qty || 0;
   return q
     ? `<span class="qty ${small ? 'sm' : ''}"><button type="button" data-sub="${key}" aria-label="Bớt ${esc(it.name)}">−</button><span>${q}</span><button type="button" data-add="${key}" aria-label="Thêm ${esc(it.name)}">+</button></span>`
@@ -75,7 +78,7 @@ function qtyCtl(key, small) {
 function renderContent() {
   const box = $('content');
   if (tab === 'noibat') {
-    const feats = FEATURED.map((f) => ({ ...f, key: findKey(f.names) })).filter((f) => f.key).slice(0, 6);
+    const feats = FEATURED.map((f) => ({ ...f, key: findKey(f.names) })).filter((f) => f.key && !itemOf(f.key).out).slice(0, 6);
     const musts = [];
     menu().cats.forEach((c, ci) => c.items.forEach((it, ii) => { if (it.must && !feats.some((f) => f.key === ci + '-' + ii)) musts.push(ci + '-' + ii); }));
     box.innerHTML = `
@@ -94,7 +97,7 @@ function renderContent() {
 }
 function rowHtml(key) {
   const it = itemOf(key);
-  return `<div class="m-item"><div class="m-info">
+  return `<div class="m-item ${it.out ? 'is-out' : ''}"><div class="m-info">
       <span class="m-name">${esc(it.name)}${it.must ? '<span class="badge">Must try</span>' : ''}</span>
       <span class="m-en">${esc(it.en)}</span><span class="m-price">${esc(it.price)}</span></div>
     <span data-ctl="${key}">${qtyCtl(key)}</span></div>`;
@@ -195,5 +198,14 @@ document.addEventListener('click', (e) => {
 });
 
 store.onConfig((c) => { config = c; render(); renderStatus(); });
+store.onMenu((m) => {
+  MENU = m; menuLoaded = true;
+  // Giữ giỏ hàng khi quản lý sửa thực đơn: dò lại món theo tên
+  if (menuKey && cart.size) {
+    const old = [...cart.values()]; cart.clear();
+    old.forEach((x) => { const k = findKey([x.name]); if (k && !itemOf(k).out) cart.set(k, { ...x, key: k, price: parsePrice(itemOf(k).price) }); });
+  }
+  if (config) { render(); renderStatus(); }
+});
 store.onTickets((t) => { tickets = t; renderStatus(); });
 store.onCalls((c) => { calls = c; if ($('callDlg').open) renderCalls(); else $('bellBtn').classList.toggle('ringing', c.some((x) => x.table === tableId)); });
