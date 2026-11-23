@@ -5,13 +5,15 @@
 // • Dán cấu hình Firebase → chế độ THẬT: điện thoại khách, máy bếp,
 //              máy thu ngân đồng bộ tức thì với nhau.
 // ─────────────────────────────────────────────────────────────
-// Cấu hình Firebase – chế độ đồng bộ thật cho Phúc Tâm
+window.FIREBASE_CONFIG = null;
+
+/* Ví dụ (thay bằng cấu hình trong Firebase Console → Project settings → Your apps):
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCl0kXHomOHLpl5sQkN2tyWU6nDcXNx6n8",
-  authDomain: "phuc-tam-vegan-restaurant.firebaseapp.com",
-  projectId: "phuc-tam-vegan-restaurant",
-  storageBucket: "phuc-tam-vegan-restaurant.firebasestorage.app",
-  messagingSenderId: "534721599255",
-  appId: "1:534721599255:web:0d39e6b42be4edf285c952",
-  measurementId: "G-RSE67YXQ99"
+  apiKey: "AIza...",
+  authDomain: "phuc-tam.firebaseapp.com",
+  projectId: "phuc-tam",
+  storageBucket: "phuc-tam.appspot.com",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcdef"
 };
+*/
